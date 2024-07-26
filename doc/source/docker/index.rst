@@ -43,3 +43,4 @@ Run Flower Docker Compose
    :maxdepth: 1
 
    tutorial-quickstart-docker-compose
+   tutorial-deploy-on-multiple-machines
