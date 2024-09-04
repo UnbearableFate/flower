@@ -48,6 +48,14 @@ jobs:
             { name: "arm64", docker: "linux/arm64", runner-os: "ubuntu-4-core-arm64" },
           ]
     steps:
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@8e5442c4ef9f78752691e2d8f8d19755c6f78e81 # v5.5.1
+        with:
+          images: ${{ inputs.namespace-repository }}
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
+
       - name: Create build id
         id: build-id
         shell: python
@@ -70,18 +78,18 @@ jobs:
           # This causes the Docker action to interpret ARG2 and ARG3 as keys instead
           # of values ​​of the multi-line string.
           build_args = '''${{ inputs.build-args }}'''.replace("\n", "\n  ")
+          annotations = '''${{ steps.meta.outputs.annotations }}'''.replace("\n", "\n  ")
+
 
           with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
               print(f"id={hash.hexdigest()}", file=fh)
               print("build-args<<EOF", file=fh)
               print(build_args, file=fh)
               print("EOF", file=fh)
+              print("annotations<<EOF", file=fh)
+              print(annotations, file=fh)
+              print("EOF", file=fh)
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@8e5442c4ef9f78752691e2d8f8d19755c6f78e81 # v5.5.1
-        with:
-          images: ${{ inputs.namespace-repository }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@988b5a0280414f521da01fcc63a27aeeb4b104db # v3.6.1
@@ -96,14 +104,17 @@ jobs:
         uses: Wandalen/wretry.action@6feedb7dedadeb826de0f45ff482b53b379a7844 # v3.5.0
         id: build
         with:
-          action: docker/build-push-action@2cdde995de11925a030ce8070c3d77a52ffcf1c0 # v5.3.0
+          action: docker/build-push-action@5cd11c3a4ced054e52742c5fd54dca954e0edd85 # v6.7.0
           attempt_limit: 60 # 60 attempts * (9 secs delay + 1 sec retry) = ~10 mins
           attempt_delay: 9000 # 9 secs
           with: |
+            sbom: true
             pull: true
             platforms: ${{ matrix.platform.docker }}
             context: "{{defaultContext}}:${{ inputs.file-dir }}"
             outputs: type=image,name=${{ inputs.namespace-repository }},push-by-digest=true,name-canonical=true,push=true
+            annotations: |
+              ${{ steps.build-id.outputs.annotations }}
             build-args: |
               ${{ steps.build-id.outputs.build-args }}
 

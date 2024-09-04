@@ -1,0 +1,24 @@
+name: Test arm
+
+on:
+  push
+
+jobs:
+  build-base-images:
+    if: ${{ github.repository == 'adap/flower' }}
+    name: Build base images
+    uses: ./.github/workflows/_docker-build.yml
+    with:
+      namespace-repository: flwr/github-ci-test-builds
+      file-dir: src/docker/base/alpine
+      build-args: |
+        PYTHON_VERSION=3.11
+        PIP_VERSION=24
+        SETUPTOOLS_VERSION=70
+        DISTRO=alpine
+        DISTRO_VERSION=3.19
+        FLWR_VERSION=1.11.0
+      tags: test-arm
+    secrets:
+      dockerhub-user: ${{ secrets.DOCKERHUB_USERNAME }}
+      dockerhub-token: ${{ secrets.DOCKERHUB_TOKEN }}
