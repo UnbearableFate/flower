@@ -9,7 +9,7 @@ from flwr_datasets import FederatedDataset
 from flwr_datasets.partitioner import IidPartitioner
 from torch.utils.data import DataLoader
 from torchvision.transforms import Compose, Normalize, ToTensor
-
+from torchvision import models
 
 class Net(nn.Module):
     """Model (simple CNN adapted from 'PyTorch: A 60 Minute Blitz')"""
@@ -31,6 +31,27 @@ class Net(nn.Module):
         x = F.relu(self.fc2(x))
         return self.fc3(x)
 
+class ResNetForCIFAR10(nn.Module):
+    def __init__(self, layers = 18):
+        super(ResNetForCIFAR10, self).__init__()
+        # 加载预训练的resnet模型
+        if layers == 18:
+            self.model = models.resnet18()
+        if layers == 34:
+            self.model = models.resnet34()
+        if layers == 50:
+            self.model = models.resnet50()
+        if layers == 101:
+            self.model = models.resnet101()
+        # 修改第一层卷积核大小和步长
+        self.model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+        # 修改最后的全连接层，以适应 CIFAR-10 的10个类别
+        num_ftrs = self.model.fc.in_features
+        self.model.fc = nn.Linear(num_ftrs, 10)
+        self.model_name = f"resnet{layers}"
+
+    def forward(self, x):
+        return self.model(x) 
 
 def get_weights(net):
     return [val.cpu().numpy() for _, val in net.state_dict().items()]
@@ -58,9 +79,20 @@ def load_data(partition_id: int, num_partitions: int, batch_size: int):
     partition = fds.load_partition(partition_id)
     # Divide data on each node: 80% train, 20% test
     partition_train_test = partition.train_test_split(test_size=0.2, seed=42)
+    '''
     pytorch_transforms = Compose(
         [ToTensor(), Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
     )
+    '''
+    pytorch_transforms = Compose(
+    [
+        ToTensor(),
+        Normalize(
+            (0.4914, 0.4822, 0.4465),
+            (0.2023, 0.1994, 0.2010),
+        ),
+    ],
+)
 
     def apply_transforms(batch):
         """Apply transforms to the partition from FederatedDataset."""

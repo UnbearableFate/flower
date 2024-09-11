@@ -6,8 +6,7 @@ from flwr.common import Context, Metrics, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
 
-from pytorchexample.task import Net, get_weights
-
+from pytorchexample.task import Net,ResNetForCIFAR10, get_weights
 
 # Define metric aggregation function
 def weighted_average(metrics: List[Tuple[int, Metrics]]) -> Metrics:
@@ -26,7 +25,7 @@ def server_fn(context: Context):
     num_rounds = context.run_config["num-server-rounds"]
 
     # Initialize model parameters
-    ndarrays = get_weights(Net())
+    ndarrays = get_weights(ResNetForCIFAR10())
     parameters = ndarrays_to_parameters(ndarrays)
 
     # Define the strategy

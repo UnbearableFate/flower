@@ -11,13 +11,13 @@ import numpy as np
 import torch
 import torch.nn as nn
 import wandb
-from pytorch_example_low_level.task import (
+from task import (
     Net,
     apply_eval_transforms,
     create_run_dir,
     test,
 )
-from pytorch_example_low_level.utils import (
+from utils import (
     parameters_record_to_state_dict,
     state_dict_to_parameters_record,
 )

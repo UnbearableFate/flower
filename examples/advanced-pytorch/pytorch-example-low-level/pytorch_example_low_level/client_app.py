@@ -4,8 +4,8 @@ import random
 import time
 
 import torch
-from pytorch_example_low_level.task import Net, load_data, test, train
-from pytorch_example_low_level.utils import (
+from task import Net, load_data, test, train
+from utils import (
     parameters_record_to_state_dict,
     state_dict_to_parameters_record,
 )

@@ -4,13 +4,13 @@ import torch
 from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context
 
-from pytorchexample.task import Net, get_weights, load_data, set_weights, test, train
+from pytorchexample.task import Net, ResNetForCIFAR10, get_weights, load_data, set_weights, test, train
 
 
 # Define Flower Client
 class FlowerClient(NumPyClient):
     def __init__(self, trainloader, valloader, local_epochs, learning_rate):
-        self.net = Net()
+        self.net = ResNetForCIFAR10()
         self.trainloader = trainloader
         self.valloader = valloader
         self.local_epochs = local_epochs
