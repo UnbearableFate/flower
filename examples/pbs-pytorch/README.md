@@ -120,7 +120,8 @@ The output directory contains:
 - `events/*.json`: each client's round, partition, host, GPU, sample count and metrics.
 - `result.json` and `final_model.pt`: aggregated metrics and global weights.
 - `status.json`: final Flower run status.
-- `ray-nodes.json`: the four live Ray nodes (simulation only).
+- `ray-nodes.json`: live Ray nodes refreshed after training, immediately before
+  final verification (simulation only).
 - Per-rank service logs, dataset preparation log and MPI launcher log.
 
 These local records contain hostnames, paths and device identifiers. Redact such

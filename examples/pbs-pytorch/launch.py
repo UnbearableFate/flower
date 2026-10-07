@@ -35,6 +35,20 @@ def port_ready(host, port):
         return False
 
 
+def check_ray_nodes(ray, output):
+    """Refresh retained Ray liveness evidence and require four live nodes."""
+    ray.init(address=os.environ["RAY_ADDRESS"])
+    try:
+        nodes = [node for node in ray.nodes() if node["Alive"]]
+        (output / "ray-nodes.json").write_text(
+            json.dumps(nodes, indent=2), encoding="utf-8"
+        )
+        if len(nodes) != 4:
+            raise RuntimeError(f"Expected four live Ray nodes, got {len(nodes)}")
+    finally:
+        ray.shutdown()
+
+
 def main():
     """Launch a real SuperNode or a Ray service according to MPI rank and mode."""
     import flwr
@@ -200,16 +214,7 @@ def main():
                 processes,
             )
             if mode == "simulation":
-                ray.init(address=os.environ["RAY_ADDRESS"])
-                nodes = [node for node in ray.nodes() if node["Alive"]]
-                (output / "ray-nodes.json").write_text(
-                    json.dumps(nodes, indent=2), encoding="utf-8"
-                )
-                if len(nodes) != 4:
-                    raise RuntimeError(
-                        f"Expected four live Ray nodes, got {len(nodes)}"
-                    )
-                ray.shutdown()
+                check_ray_nodes(ray, output)
 
             count = 3 if mode == "deployment" else 10
             command = [
@@ -258,6 +263,8 @@ def main():
                 return state == "finished:completed"
 
             wait_for(completed, "Flower run did not complete", processes, seconds=1350)
+            if mode == "simulation":
+                check_ray_nodes(ray, output)
             subprocess.run(
                 [str(python), str(app_root / "verify.py"), str(output), mode],
                 check=True,

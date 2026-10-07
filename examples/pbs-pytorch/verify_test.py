@@ -2,9 +2,11 @@
 
 import json
 import math
+from unittest.mock import Mock
 
 import pytest
 
+from launch import check_ray_nodes
 from verify import verify
 
 
@@ -87,3 +89,18 @@ def test_rejects_duplicate_client(simulation):
     write_json(path, event)
     with pytest.raises(ValueError, match="Missing or duplicate clients"):
         verify(simulation, "simulation")
+
+
+def test_rejects_ray_worker_lost_after_startup(simulation, monkeypatch):
+    monkeypatch.setenv("RAY_ADDRESS", "ray-head:6379")
+    ray = Mock()
+    ray.nodes.side_effect = [
+        [{"Alive": True} for _ in range(4)],
+        [{"Alive": True} for _ in range(3)] + [{"Alive": False}],
+    ]
+    check_ray_nodes(ray, simulation)
+    with pytest.raises(RuntimeError, match="Expected four live Ray nodes, got 3"):
+        check_ray_nodes(ray, simulation)
+    with pytest.raises(ValueError, match="Ray did not use four live physical nodes"):
+        verify(simulation, "simulation")
+    assert ray.shutdown.call_count == 2
